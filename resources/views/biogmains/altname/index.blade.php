@@ -25,11 +25,18 @@ $value->pivot->c_alt_name = unionPKDef($value->pivot->c_alt_name);
 $value->pivot->c_alt_name_chn = unionPKDef($value->pivot->c_alt_name_chn);
 $c_alt_name_view = unionPKDef_decode_for_convert($value->pivot->c_alt_name);
 $c_alt_name_chn_view = unionPKDef_decode_for_convert($value->pivot->c_alt_name_chn);
+
 //20210715新增錯別字過濾
 $errWord = array('?', '', '�');
 $value->pivot->c_alt_name_chn = str_replace($errWord, '', $value->pivot->c_alt_name_chn);
-if($value->pivot->c_sequence == NULL) {
-$value->pivot->c_sequence = 'NULL';
+
+//20240508修正c_sequence的判斷，資料有NULL、0、1-7
+if($value->pivot->c_sequence === 0) {
+  $value->pivot->c_sequence = 0;
+} elseif($value->pivot->c_sequence == NULL) {
+  $value->pivot->c_sequence = 'NULL';
+} else {
+  $value->pivot->c_sequence = $value->pivot->c_sequence;
 }
 @endphp
                     <tr>
