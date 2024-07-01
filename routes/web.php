@@ -38,6 +38,7 @@ Route::resource('basicinformation', 'BasicInformationController', ['name' => [
     'index' => 'basicinformation.index',
 ]]);
 Route::get('basicinformation/{id}/saveas', 'BasicInformationController@saveas');
+Route::get('basicinformation/{id}/Duplicate_Collateral_Info', 'BasicInformationController@Duplicate_Collateral_Info');
 Route::get('basicinformation/{id}/offices/{cpk}/saveas', 'BasicInformationOfficesController@saveas');
 
 Route::resource('basicinformation.addresses', 'BasicInformationAddressesController');
