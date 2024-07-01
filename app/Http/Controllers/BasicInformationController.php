@@ -210,6 +210,141 @@ class BasicInformationController extends Controller
         return redirect()->route('basicinformation.edit', $new_id); 
     }
 
+    //20240701新增Duplicate Collateral Info功能
+    public function Duplicate_Collateral_Info($id)
+    {
+        if (!Auth::check()) {
+            flash('请登入后编辑 @ '.Carbon::now(), 'error');
+            return redirect()->back();
+        }
+        elseif (Auth::user()->is_active != 1 || Auth::user()->is_admin == 2){
+            flash('该用户没有权限，请联系管理员 @ '.Carbon::now(), 'error');
+            return redirect()->back();
+        }
+        $data = BiogMain::find($id)->toArray();
+        $new_id = BiogMain::max('c_personid') + 1;
+        $data['c_personid'] = $new_id;
+        $data = $this->toolRepository->timestamp($data, True); //建檔資訊
+        $data['c_modified_by'] = $data['c_modified_date'] = '';
+        $flight = BiogMain::create($data);
+        $this->operationRepository->store(Auth::id(), $new_id, 1, 'BIOG_MAIN', $new_id, $data);
+        //擴充複製訊息：地址，出處，親屬，社會關係，社會機構，社會區分
+        //地址
+        $addr = DB::table('BIOG_ADDR_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($addr as $addr_data) {
+            $addr_data = (array)$addr_data;
+            $addr_data['c_personid'] = $new_id;
+            $addr_data = array_except($addr_data, ['_token']);
+            $addr_data = $this->toolRepository->timestamp($addr_data, True); //建檔資訊
+            DB::table('BIOG_ADDR_DATA')->insert($addr_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'BIOG_ADDR_DATA', $addr_data['c_personid']."-".$addr_data['c_addr_id']."-".$addr_data['c_addr_type']."-".$addr_data['c_sequence'], $addr_data);
+        }
+
+        //出處
+        $source = DB::table('BIOG_SOURCE_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($source as $source_data) {
+            $source_data = (array)$source_data;
+            $source_data['c_personid'] = $new_id;
+            $source_data = array_except($source_data, ['_token']);
+            DB::table('BIOG_SOURCE_DATA')->insert($source_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'BIOG_SOURCE_DATA', $source_data['c_personid']."-".$source_data['c_textid']."-".$source_data['c_pages'], $source_data);
+        }
+
+        //親屬
+        $kin = DB::table('KIN_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($kin as $kin_data) {
+            $kin_data = (array)$kin_data;
+            $kin_data['c_personid'] = $new_id;
+            $kin_data = $this->toolRepository->timestamp($kin_data, True); //建檔資訊
+            DB::table('KIN_DATA')->insert($kin_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'KIN_DATA', $kin_data['c_personid']."-".$kin_data['c_kin_id']."-".$kin_data['c_kin_code'], $kin_data);
+        }
+
+        $kin_pair = DB::table('KIN_DATA')->where([
+            ['c_kin_id', '=', $id],
+        ])->get();
+        foreach ($kin_pair as $kin_data) {
+            $kin_data = (array)$kin_data;
+            $kin_pair_id = $kin_data['c_personid'];
+            $kin_data['c_kin_id'] = $new_id;
+            $kin_data = $this->toolRepository->timestamp($kin_data, True); //建檔資訊
+            DB::table('KIN_DATA')->insert($kin_data);
+            $this->operationRepository->store(Auth::id(), $kin_pair_id, 1, 'KIN_DATA', $kin_data['c_personid']."-".$kin_data['c_kin_id']."-".$kin_data['c_kin_code'], $kin_data);
+        }
+
+        //社會關係
+        $assoc = DB::table('ASSOC_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($assoc as $assoc_data) {
+            $assoc_data = (array)$assoc_data;
+            $assoc_data['c_personid'] = $new_id;
+            $assoc_data['c_kin_id'] = 0;
+            $assoc_data['c_kin_code'] = 0;
+            $assoc_data['c_assoc_kin_id'] = 0;
+            $assoc_data['c_assoc_kin_code'] = 0;
+            $assoc_data['c_tertiary_personid'] = 0;
+            $assoc_data['c_tertiary_type_notes'] = null;
+            $assoc_data = $this->toolRepository->timestamp($assoc_data, True); //建檔資訊
+            DB::table('ASSOC_DATA')->insert($assoc_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'ASSOC_DATA', $assoc_data['c_personid']."-".$assoc_data['c_assoc_code']."-".$assoc_data['c_assoc_id']."-".$assoc_data['c_kin_code']."-".$assoc_data['c_kin_id']."-".$assoc_data['c_assoc_kin_code']."-".$assoc_data['c_assoc_kin_id']."-".$assoc_data['c_text_title'], $assoc_data);
+        }
+
+        $assoc_pair = DB::table('ASSOC_DATA')->where([
+            ['c_assoc_id', '=', $id],
+        ])->get();
+        foreach ($assoc_pair as $assoc_data) {
+            $assoc_data = (array)$assoc_data;
+            $assoc_pair_id = $assoc_data['c_personid'];
+            $assoc_data['c_assoc_id'] = $new_id;
+            $assoc_data['c_kin_id'] = 0;
+            $assoc_data['c_kin_code'] = 0;
+            $assoc_data['c_assoc_kin_id'] = 0;
+            $assoc_data['c_assoc_kin_code'] = 0;
+            $assoc_data['c_tertiary_personid'] = 0;
+            $assoc_data['c_tertiary_type_notes'] = null;
+            $assoc_data = $this->toolRepository->timestamp($assoc_data, True); //建檔資訊
+            DB::table('ASSOC_DATA')->insert($assoc_data);
+            $this->operationRepository->store(Auth::id(), $assoc_pair_id, 1, 'ASSOC_DATA', $assoc_data['c_personid']."-".$assoc_data['c_assoc_code']."-".$assoc_data['c_assoc_id']."-".$assoc_data['c_kin_code']."-".$assoc_data['c_kin_id']."-".$assoc_data['c_assoc_kin_code']."-".$assoc_data['c_assoc_kin_id']."-".$assoc_data['c_text_title'], $assoc_data);
+        }
+
+        //社交機構
+        $inst = DB::table('BIOG_INST_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($inst as $inst_data) {
+            $inst_data = (array)$inst_data;
+            $inst_data['c_personid'] = $new_id;
+            $inst_data = array_except($inst_data, ['_token']);
+            $inst_data = $this->toolRepository->timestamp($inst_data, True); //建檔資訊
+            DB::table('BIOG_INST_DATA')->insert($inst_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'BIOG_INST_DATA', $inst_data['c_personid']."-".$inst_data['c_inst_code']."-".$inst_data['c_inst_name_code']."-".$inst_data['c_bi_role_code'], $inst_data);
+        } 
+
+        //社會區分
+        $status = DB::table('STATUS_DATA')->where([
+            ['c_personid', '=', $id],
+        ])->get();
+        foreach ($status as $status_data) {
+            $status_data = (array)$status_data;
+            $status_data['c_personid'] = $new_id;
+            $status_data = array_except($status_data, ['_token']);
+            $status_data = $this->toolRepository->timestamp($status_data, True); //建檔資訊
+            DB::table('STATUS_DATA')->insert($status_data);
+            $this->operationRepository->store(Auth::id(), $new_id, 1, 'STATUS_DATA', $status_data['c_personid'].'-'.$status_data['c_sequence'].'-'.$status_data['c_status_code'], $status_data);
+        }
+
+        //擴充結束
+        flash('Create success @ '.Carbon::now(), 'success');
+        return redirect()->route('basicinformation.edit', $new_id);
+    }
+
     /**
      * Remove the specified resource from storage.
      *
