@@ -115,6 +115,13 @@ class BasicInformationKinshipController extends Controller
         }
         $data = $this->biogMainRepository->kinshipUpdateById($request, $id, $id_);
         $id_ = $id."-".$data['c_kin_id']."-".$data['c_kin_code'];
+        if($data['err'] == 0) {
+             flash('對應的親屬資料更新失敗，請從對應的親屬人物修改。', 'error');
+        }
+        elseif($data['err'] > 1) {
+             flash('對應的親屬資料有多筆重複，請從對應的親屬人物修改。', 'error');
+        }
+        else {}
         flash('Update success @ '.Carbon::now(), 'success');
         return redirect()->route('basicinformation.kinship.edit', ['id'=>$id, 'id_'=>$id_]);
     }

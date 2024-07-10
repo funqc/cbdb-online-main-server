@@ -744,15 +744,16 @@ class BiogMainRepository
         $data = $request->all();
         $kin_pair = $data['c_kinship_pair'];
         $kin_id = $data['c_kin_id'];
-        $c_created_date = $row->c_created_date;
+        $c_autogen_notes = $row->c_autogen_notes;
         //$old_kin_id = DB::table('KIN_DATA')->where('tts_sysno',$id_)->first()->c_kin_id;
         $old_kin_id = $row->c_kin_id;
+        $old_kin_code = $row->c_kin_code;
         $data = array_except($data, ['_token', '_method', 'c_kinship_pair']);
         $data['c_kin_code'] = $data['c_kin_code'] == -999 ? '0' : $data['c_kin_code'];
         $data['c_kin_id'] = $data['c_kin_id'] == -999 ? '0' : $data['c_kin_id'];
         $data['c_source'] = $data['c_source'] == -999 ? '0' : $data['c_source'];
         $data = (new ToolsRepository)->timestamp($data);
-//        dump($data);
+        //dump($data);
         //DB::table('KIN_DATA')->where('tts_sysno',$id_)->update($data);
         DB::table('KIN_DATA')->where([
             ['c_personid', '=', $temp_l[0]],
@@ -765,9 +766,24 @@ class BiogMainRepository
         $data['c_kin_code'] = $kin_pair;
         $data['c_personid'] = $kin_id;
         $data = array_except($data, ['c_kin_id']);
-//        dump($data);
-//        dd(DB::table('KIN_DATA')->where([['c_kin_id',$id], ['c_personid', $old_kin_id]])->first());
-        DB::table('KIN_DATA')->where([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_created_date', $c_created_date]])->update($data);
+        //dump($data);
+        //dd(DB::table('KIN_DATA')->where([['c_kin_id',$id], ['c_personid', $old_kin_id]])->first());
+        #20240710修正對應親屬的查詢方式，依據KINSHIP_CODES的c_kin_pair1和c_kin_pair2查詢
+        #20240710提前做一次查詢，檢查資料庫是否有0筆資料或多筆資料。
+        $kin_code_pair = KinshipCode::find($old_kin_code);
+        $sum = DB::table('KIN_DATA')
+        ->where([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_autogen_notes', $c_autogen_notes], ['c_kin_code', $kin_code_pair->c_kin_pair1]])
+        ->orWhere([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_autogen_notes', $c_autogen_notes], ['c_kin_code', $kin_code_pair->c_kin_pair2]])
+        ->get();
+        if(count($sum) == 1) {
+            DB::table('KIN_DATA')
+            ->where([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_autogen_notes', $c_autogen_notes], ['c_kin_code', $kin_code_pair->c_kin_pair1]])
+            ->orWhere([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_autogen_notes', $c_autogen_notes], ['c_kin_code', $kin_code_pair->c_kin_pair2]])
+            ->update($data);
+        } else {
+            DB::table('KIN_DATA')->where([['c_kin_id',$id], ['c_personid', $old_kin_id], ['c_autogen_notes', $c_autogen_notes]])->update($data);
+        }
+        $ori_data['err'] = count($sum) ?? 0;
         return $ori_data;
     }
 
@@ -810,33 +826,61 @@ class BiogMainRepository
             ['c_kin_id', '=', $temp_l[1]],
             ['c_kin_code', '=', $temp_l[2]],
         ])->first();
+
+        #20240710修正對應親屬的查詢方式，依據KINSHIP_CODES的c_kin_pair1和c_kin_pair2查詢
+        $old_kin_code = $row->c_kin_code;
+        $kin_code_pair = KinshipCode::find($old_kin_code);
+
         (new OperationRepository())->store(Auth::id(), $id, 4, 'KIN_DATA', $id, $row);
+
         $row2 = DB::table('KIN_DATA')->where([
             ['c_kin_id',$row->c_personid], 
             ['c_personid', $row->c_kin_id],
-            ['c_source', $row->c_source],
-            ['c_created_date', $row->c_created_date],
+            ['c_autogen_notes', $row->c_autogen_notes],
+            ['c_kin_code', $kin_code_pair->c_kin_pair1],
+        ])->orWhere([
+            ['c_kin_id',$row->c_personid],
+            ['c_personid', $row->c_kin_id],
+            ['c_autogen_notes', $row->c_autogen_notes],
+            ['c_kin_code', $kin_code_pair->c_kin_pair2],
         ])->first();
+
         DB::table('KIN_DATA')->where([
             ['c_personid', '=', $temp_l[0]],
             ['c_kin_id', '=', $temp_l[1]],
             ['c_kin_code', '=', $temp_l[2]],
         ])->delete();
+
         //先檢查$row2->c_modified_date是否為null，依照c_kin_id, c_personid, c_source, c_created_date, c_modified_date查詢後進行刪除反向關係。
         if(is_null($row2->c_modified_date)) {
             DB::table('KIN_DATA')->where([
                 ['c_kin_id',$row2->c_kin_id], 
                 ['c_personid', $row2->c_personid], 
                 ['c_source', $row2->c_source],
-                ['c_created_date', $row2->c_created_date],
+                ['c_autogen_notes', $row2->c_autogen_notes],
+                ['c_kin_code', $kin_code_pair->c_kin_pair1],
+            ])->orWhere([
+                ['c_kin_id',$row2->c_kin_id],
+                ['c_personid', $row2->c_personid],
+                ['c_source', $row2->c_source],
+                ['c_autogen_notes', $row2->c_autogen_notes],
+                ['c_kin_code', $kin_code_pair->c_kin_pair2],
             ])->delete();
         }
         else {
             DB::table('KIN_DATA')->where([
-                ['c_kin_id',$row2->c_kin_id], 
-                ['c_personid', $row2->c_personid], 
+                ['c_kin_id',$row2->c_kin_id],
+                ['c_personid', $row2->c_personid],
                 ['c_source', $row2->c_source],
-                ['c_created_date', $row2->c_created_date],
+                ['c_autogen_notes', $row2->c_autogen_notes],
+                ['c_kin_code', $kin_code_pair->c_kin_pair1],
+                ['c_modified_date', $row2->c_modified_date],
+            ])->orWhere([
+                ['c_kin_id',$row2->c_kin_id],
+                ['c_personid', $row2->c_personid],
+                ['c_source', $row2->c_source],
+                ['c_autogen_notes', $row2->c_autogen_notes],
+                ['c_kin_code', $kin_code_pair->c_kin_pair2],
                 ['c_modified_date', $row2->c_modified_date],
             ])->delete();
         }
