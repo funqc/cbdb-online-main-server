@@ -793,6 +793,8 @@ https://input.cbdb.fas.harvard.edu/api/query_associates?RequestPayload={"associa
 | dynEnd | 數字 | 結束朝代 |
 | includeMale | 數字 | 是否包含男性，是=1，否=0. 默認為 1 |
 | includeFemale | 數字 | 是否包含女性，是=1，否=0. 默認為 1 |
+| start | 數字 | 開始筆數 |
+| list | 數字 | 列表長度 |
 
 ### 輸入示例:
 
@@ -818,7 +820,7 @@ RequestPayload:{
 ### 查詢示例 (by POST)
 
 ```
-https://input.cbdb.fas.harvard.edu/api/query_assoc_network?RequestPayload={"people":[1762,3767],"assocCode":[429],"assocType":["02"],"maxNodeDist":1,"place":[13305],"usePeoplePlace":1,"broad":0,"useDy":1,"dynStart":15,"dynEnd":15,"includeMale":1,"includeFemale":1}
+https://input.cbdb.fas.harvard.edu/api/query_assoc_network?RequestPayload={"people":[1762,3767],"assocCode":[429],"assocType":["02"],"maxNodeDist":1,"place":[13305],"usePeoplePlace":1,"broad":0,"useDy":1,"dynStart":15,"dynEnd":15,"includeMale":1,"includeFemale":1, "start":0, "list":10}
 ```
 
 說明：查找王安石（1762）和蘇軾（3767）的社會網路，查詢條件是所有和他們之間有直接（單步關係 "usePeoplePlace":1）的社會關係為：致書（ "assocCode": [429]）和學術關係（"assocType":[02]）的宋代（"dynStart":15,"dynEnd":15,）眉山（"place":[13305]）附近（"broad":0）的人物。並且查詢出這些人物之間的關係。例如，蘇軾致書的對象弟弟蘇轍 1493，以及蘇軾的老師劉巨 26417. 這兩個人物自己其實也有關係（劉巨也是蘇轍的老師）。在蘇軾的 maxNodeDist = 1 查詢中也希望呈現劉巨和蘇轍的關係。
