@@ -10,7 +10,7 @@
     "production": "mix --production"
   },
   "devDependencies": {
-    "axios": "^0.21.2",
+    "axios": "^0.28.0",
     "bootstrap-sass": "^3.4.1",
     "cross-env": "^5.2.0",
     "jquery": "^3.5.0",
