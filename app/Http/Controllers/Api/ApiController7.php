@@ -82,10 +82,22 @@ class ApiController7 extends Controller
         //主要資料庫邏輯
 
         $first_row = DB::table('ASSOC_TYPES')->whereIn('ASSOC_TYPES.c_assoc_type_parent_id', $assocType)->get();
-        foreach ($first_row as $val) {
-            $assocType_row[] = $val->c_assoc_type_id;
+        //20241028增補，確認是否有查詢到資料。
+        $c_assoc_type_parent_id_sum = count($first_row);
+        #dd($c_assoc_type_parent_id_sum);
+        if(!empty($c_assoc_type_parent_id_sum)) {
+            foreach ($first_row as $val) {
+                $assocType_row[] = $val->c_assoc_type_id;
+            }
+        }
+        else{
+            $first_row = DB::table('ASSOC_TYPES')->whereIn('ASSOC_TYPES.c_assoc_type_id', $assocType)->get();
+            foreach ($first_row as $val) {
+                $assocType_row[] = $val->c_assoc_type_id;
+            }
         }
         //dd($assocType_row);
+        //20241028增補結束
 
         $second_row = DB::table('ASSOC_CODE_TYPE_REL')->whereIn('ASSOC_CODE_TYPE_REL.c_assoc_type_id', $assocType_row)->get();
         foreach ($second_row as $val) {
