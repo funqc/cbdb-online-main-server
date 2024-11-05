@@ -6,6 +6,7 @@
         <!-- /.box-header -->
         <div class="box-body">
             <table class="table table-bordered">
+                <tbody>
                 <tr>
                     <th style="width: 10px">#</th>
                     <th>Task</th>
@@ -52,6 +53,7 @@
                     </td>
                     <td><span class="badge bg-green">90%</span></td>
                 </tr>
+                </tbody>
             </table>
         </div>
         <!-- /.box-body -->

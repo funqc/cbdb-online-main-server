@@ -9,13 +9,16 @@
  |
  */
  
-let mix = require('laravel-mix');
+const mix = require('laravel-mix');
+/*
+20241105修改為Vue 3的宣告方式
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
+*/
+const { VueLoaderPlugin } = require('vue-loader');
   
 mix.js('resources/assets/js/app.js', 'public/js')
    .sass('resources/assets/sass/app.scss', 'public/css')
-   .vue({ version: 2 });
-
-const VueLoaderPlugin = require('vue-loader/lib/plugin');
+   .vue({ version: 3 });
 
 module.exports = {
   module: {
