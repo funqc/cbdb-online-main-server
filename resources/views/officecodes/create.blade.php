@@ -11,7 +11,7 @@
                     <div class="form-group">
                         <label for="c_office_id" class="col-sm-2 control-label">c_office_id</label>
                         <div class="col-sm-10">
-                            <input type="text" name="c_office_id" class="form-control" value="{{ $temp_id or '' }}" {{ $temp_id or '' }}>
+                            <input type="text" name="c_office_id" class="form-control" value="{{ $temp_id or '' }}">
                         </div>
                     </div>
                     <div class="form-group">
