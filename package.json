@@ -13,7 +13,7 @@
     "@vue/compiler-sfc": "^3.5.12",
     "axios": "^0.28.0",
     "bootstrap-sass": "^3.4.1",
-    "cross-env": "^5.2.0",
+    "cross-env": "^7.0.3",
     "jquery": "^3.5.0",
     "laravel-mix": "^6.0.10",
     "lodash": "^4.17.21",
